@@ -10,7 +10,7 @@ app = FastAPI()
 # SECURITY FIX: Restricting access to only your future Vercel site and local testing
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000", "https://credilens.vercel.app"],
+    allow_origins=["http://localhost:3000", "https://credilens-frontend.vercel.app"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -57,4 +57,3 @@ async def analyze_statement(file: UploadFile = File(...)):
 
     except Exception as e:
         return {"error": str(e)}
-        
