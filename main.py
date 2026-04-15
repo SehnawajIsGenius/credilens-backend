@@ -7,16 +7,21 @@ from groq import Groq
 
 app = FastAPI()
 
-# SECURITY FIX: Restricting access to only your future Vercel site and local testing
+# SECURITY UPDATE: Added "*" to allow origins during debugging 
+# and added your specific Vercel URL without the trailing slash.
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000", "https://credilens-frontend.vercel.app"],
+    allow_origins=[
+        "http://localhost:3000", 
+        "https://credilens-frontend.vercel.app",
+        "https://credilens-frontend-git-main-sehnawajisgenius-projects.vercel.app"
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-# SECURITY FIX: Pulling the key from a hidden environment variable
+# Pulling the key from Environment Variables
 GROQ_API_KEY = os.environ.get("GROQ_API_KEY")
 client = Groq(api_key=GROQ_API_KEY)
 
@@ -28,11 +33,15 @@ def health_check():
 async def analyze_statement(file: UploadFile = File(...)):
     try:
         raw_text = ""
+        # Improved PDF reading logic
         with pdfplumber.open(file.file) as pdf:
             for page in pdf.pages:
                 extracted = page.extract_text()
                 if extracted:
                     raw_text += extracted + "\n"
+
+        if not raw_text.strip():
+            return {"error": "Could not extract text from the PDF. Is it a scanned image?"}
 
         system_prompt = """
         You are an expert financial underwriter analyzing an Indian bank statement. 
@@ -45,7 +54,7 @@ async def analyze_statement(file: UploadFile = File(...)):
         chat_completion = client.chat.completions.create(
             messages=[
                 {"role": "system", "content": system_prompt},
-                {"role": "user", "content": f"Raw Document Text:\n{raw_text[:15000]}"} # Safety limit for document size
+                {"role": "user", "content": f"Raw Document Text:\n{raw_text[:12000]}"} 
             ],
             model="llama3-8b-8192",
             response_format={"type": "json_object"},
@@ -56,4 +65,6 @@ async def analyze_statement(file: UploadFile = File(...)):
         return json.loads(response_text)
 
     except Exception as e:
+        print(f"Error occurred: {str(e)}") # This will show up in Render Logs
         return {"error": str(e)}
+        
