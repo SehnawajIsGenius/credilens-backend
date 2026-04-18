@@ -38,7 +38,8 @@ async def analyze_statement(file: UploadFile = File(...)):
                     "role": "system",
                     "content": """You are an expert financial underwriter analyzing an Indian bank statement.
 Return ONLY a valid JSON object with exactly these keys:
-{"verified_monthly_salary": 0, "bounced_cheque_count": 0, "risk_score": 0, "total_emi": 0, "average_balance": 0, "summary": ""}"""
+{"verified_monthly_salary": 0, "bounced_cheque_count": 0, "risk_score": 0, "total_emi": 0, "average_balance": 0, "summary": ""}
+IMPORTANT: risk_score MUST be a single number between 1 and 10. Never more than 10."""
                 },
                 {
                     "role": "user",
@@ -50,7 +51,15 @@ Return ONLY a valid JSON object with exactly these keys:
             temperature=0.0,
         )
 
-        return json.loads(chat_completion.choices[0].message.content)
+        result = json.loads(chat_completion.choices[0].message.content)
+
+        if "risk_score" in result:
+            score = int(result["risk_score"])
+            if score > 10:
+                score = score % 10 or 10
+            result["risk_score"] = max(1, min(10, score))
+
+        return result
 
     except Exception as e:
         return {"error": str(e)}
