@@ -11,11 +11,10 @@ app = FastAPI()
 # and added your specific Vercel URL without the trailing slash.
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "http://localhost:3000", 
-        "https://credilens-frontend.vercel.app",
-        "https://credilens-frontend-git-main-sehnawajisgenius-projects.vercel.app"
-    ],
+    allow_origins=["*"], # This allows EVERY website to talk to your backend
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -56,7 +55,7 @@ async def analyze_statement(file: UploadFile = File(...)):
                 {"role": "system", "content": system_prompt},
                 {"role": "user", "content": f"Raw Document Text:\n{raw_text[:12000]}"} 
             ],
-            model="llama3-8b-8192",
+            model="llama-3.3-70b-versatile",
             response_format={"type": "json_object"},
             temperature=0.0,
         )
@@ -67,4 +66,3 @@ async def analyze_statement(file: UploadFile = File(...)):
     except Exception as e:
         print(f"Error occurred: {str(e)}") # This will show up in Render Logs
         return {"error": str(e)}
-        
