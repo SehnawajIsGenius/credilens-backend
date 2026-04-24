@@ -4,3 +4,4 @@ pdfplumber
 groq==0.9.0
 python-multipart
 httpx==0.27.2
+requests

@@ -7,6 +7,21 @@ from groq import Groq
 
 app = FastAPI()
 
+import threading
+import requests
+import time
+
+def keep_alive():
+    while True:
+        time.sleep(840)  # ping every 14 minutes
+        try:
+            requests.get("https://credilens-api.onrender.com/")
+        except:
+            pass
+
+threading.Thread(target=keep_alive, daemon=True).start()
+
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -55,3 +70,4 @@ risk_score MUST be between 1 and 10."""},
 
     except Exception as e:
         return {"error": str(e)}
+
