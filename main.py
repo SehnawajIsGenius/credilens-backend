@@ -15,9 +15,6 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-GROQ_API_KEY = os.environ.get("GROQ_API_KEY")
-client = Groq(api_key=GROQ_API_KEY) if GROQ_API_KEY else None
-
 @app.get("/")
 def health_check():
     return {"status": "Backend is live and secure, Groq is connected!"}
@@ -25,14 +22,19 @@ def health_check():
 @app.post("/upload")
 async def analyze_statement(file: UploadFile = File(...), password: str = Form(None)):
     try:
+        GROQ_API_KEY = os.environ.get("GROQ_API_KEY")
+        client = Groq(api_key=GROQ_API_KEY)
+
         raw_text = ""
         with pdfplumber.open(file.file, password=password) as pdf:
             for page in pdf.pages:
                 text = page.extract_text()
                 if text:
                     raw_text += text + "\n"
+
         if not raw_text.strip():
             return {"error": "No readable text found."}
+
         chat_completion = client.chat.completions.create(
             messages=[
                 {"role": "system", "content": """You are an expert financial underwriter analyzing an Indian bank statement.
@@ -45,9 +47,11 @@ risk_score MUST be between 1 and 10."""},
             response_format={"type": "json_object"},
             temperature=0.0,
         )
+
         result = json.loads(chat_completion.choices[0].message.content)
         if "risk_score" in result:
             result["risk_score"] = max(1, min(10, int(result["risk_score"])))
         return result
+
     except Exception as e:
         return {"error": str(e)}
